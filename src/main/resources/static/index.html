@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>CRM Júnior - Gestão de Leads</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen p-6">
+  <div class="max-w-5xl mx-auto space-y-8">
+    <header class="flex items-center justify-between pb-4 border-b border-gray-200">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-800">CRM Júnior</h1>
+        <p class="text-sm text-gray-500">Pipeline e Gestão de Leads</p>
+      </div>
+      <span class="px-3 py-1 text-xs font-semibold text-emerald-700 bg-emerald-100 rounded-full">Online</span>
+    </header>
+
+    <!-- Formulário de Cadastro -->
+    <section class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+      <h2 class="text-lg font-semibold text-gray-700 mb-4">Novo Lead</h2>
+      <form id="leadForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Nome *</label>
+          <input type="text" id="nome" required placeholder="Ex: Roberto Dias" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">E-mail *</label>
+          <input type="email" id="email" required placeholder="Ex: roberto@empresa.com" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Telefone</label>
+          <input type="text" id="telefone" placeholder="Ex: 84999998888" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Empresa</label>
+          <input type="text" id="empresa" placeholder="Ex: Alfa Tech" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Status</label>
+          <select id="status" class="w-full px-3 py-2 border rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+            <option value="NOVO">NOVO</option>
+            <option value="EM_CONTATO">EM CONTATO</option>
+            <option value="PROPOSTA">PROPOSTA</option>
+            <option value="CONVERTIDO">CONVERTIDO</option>
+          </select>
+        </div>
+        <div class="lg:col-span-5 flex justify-end">
+          <button type="submit" class="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition">Cadastrar Lead</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Tabela de Leads -->
+    <section class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+        <h2 class="text-lg font-semibold text-gray-700">Leads Cadastrados</h2>
+        <button onclick="carregarLeads()" class="text-xs text-blue-600 hover:underline">Atualizar lista</button>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm text-gray-600">
+          <thead class="bg-gray-100 text-xs uppercase text-gray-500">
+            <tr>
+              <th class="px-4 py-3">ID</th>
+              <th class="px-4 py-3">Nome</th>
+              <th class="px-4 py-3">E-mail</th>
+              <th class="px-4 py-3">Telefone</th>
+              <th class="px-4 py-3">Empresa</th>
+              <th class="px-4 py-3">Status</th>
+              <th class="px-4 py-3 text-center">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaLeads" class="divide-y divide-gray-200">
+            <!-- Linhas preenchidas via JavaScript -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const API_URL = '/api/leads';
+
+    async function carregarLeads() {
+      try {
+        const res = await fetch(API_URL);
+        const leads = await res.json();
+        const tbody = document.getElementById('tabelaLeads');
+        tbody.innerHTML = '';
+
+        if (leads.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" class="text-center py-6 text-gray-400">Nenhum lead cadastrado ainda.</td></tr>';
+          return;
+        }
+
+        leads.forEach(lead => {
+          const tr = document.createElement('tr');
+          tr.className = 'hover:bg-gray-50 transition';
+          tr.innerHTML = `
+            <td class="px-4 py-3 font-semibold text-gray-900">${lead.id}</td>
+            <td class="px-4 py-3">${lead.nome || '-'}</td>
+            <td class="px-4 py-3">${lead.email || '-'}</td>
+            <td class="px-4 py-3">${lead.telefone || '-'}</td>
+            <td class="px-4 py-3">${lead.empresa || '-'}</td>
+            <td class="px-4 py-3"><span class="px-2 py-1 text-xs rounded-full bg-blue-50 text-blue-700 font-medium">${lead.status || 'NOVO'}</span></td>
+            <td class="px-4 py-3 text-center">
+              <button onclick="deletarLead(${lead.id})" class="text-red-500 hover:text-red-700 text-xs font-medium">Excluir</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        console.error('Erro ao buscar leads:', err);
+      }
+    }
+
+    document.getElementById('leadForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const novoLead = {
+        nome: document.getElementById('nome').value,
+        email: document.getElementById('email').value,
+        telefone: document.getElementById('telefone').value,
+        empresa: document.getElementById('empresa').value,
+        status: document.getElementById('status').value
+      };
+
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(novoLead)
+        });
+
+        if (res.ok) {
+          document.getElementById('leadForm').reset();
+          carregarLeads();
+        }
+      } catch (err) {
+        console.error('Erro ao salvar lead:', err);
+      }
+    });
+
+    async function deletarLead(id) {
+      if (!confirm('Deseja realmente excluir este lead?')) return;
+      try {
+        const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+        if (res.ok) carregarLeads();
+      } catch (err) {
+        console.error('Erro ao deletar lead:', err);
+      }
+    }
+
+    // Carrega a lista assim que abrir a página
+    carregarLeads();
+  </script>
+</body>
+</html>
