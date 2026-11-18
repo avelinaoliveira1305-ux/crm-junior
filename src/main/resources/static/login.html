@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM Júnior - Acesso Corporativo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 flex items-center justify-center min-h-screen">
+    <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md border border-slate-200">
+        <div class="text-center mb-6">
+            <h1 class="text-2xl font-bold text-slate-800">CRM Júnior</h1>
+            <p class="text-sm text-slate-500">Acesso Restrito ao Sistema Corporativo</p>
+        </div>
+
+        <form id="loginForm" onsubmit="realizarLogin(event)" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-slate-700">Utilizador / E-mail</label>
+                <input type="text" id="usuario" value="admin" required
+                       class="mt-1 w-full px-3 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 outline-none">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700">Palavra-passe</label>
+                <input type="password" id="senha" value="admin123" required
+                       class="mt-1 w-full px-3 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 outline-none">
+            </div>
+
+            <div id="erroLogin" class="text-xs text-red-600 hidden font-medium text-center">
+                Credenciais inválidas. Tente admin / admin123.
+            </div>
+
+            <button type="submit"
+                    class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 rounded-md transition duration-150">
+                Entrar no Sistema
+            </button>
+        </form>
+
+        <p class="mt-4 text-xs text-center text-slate-400">Ambiente de Demonstração Acadêmica</p>
+    </div>
+
+    <script>
+        function realizarLogin(event) {
+            event.preventDefault();
+            const usuario = document.getElementById('usuario').value.trim();
+            const senha = document.getElementById('senha').value.trim();
+
+            if (usuario === 'admin' && senha === 'admin123') {
+                localStorage.setItem('crm_auth_token', 'autenticado_com_sucesso');
+                window.location.href = '/index.html';
+            } else {
+                document.getElementById('erroLogin').classList.remove('hidden');
+            }
+        }
+    </script>
+</body>
+</html>

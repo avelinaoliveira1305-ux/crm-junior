@@ -78,6 +78,34 @@
   </div>
 
   <script>
+//Controlo de Acesso e Sessão
+  if (!localStorage.getItem('crm_auth_token')) {
+      window.location.href = '/login.html';
+  }
+
+  function fazerLogout() {
+      localStorage.removeItem('crm_auth_token');
+      window.location.href = '/login.html';
+  }
+
+  // Obter dados agregados para o Relatório Executivo
+  async function carregarRelatorio() {
+      try {
+          const resposta = await fetch('/api/leads/relatorio');
+          if (!resposta.ok) return;
+          const dados = await resposta.json();
+          
+          const elTotal = document.getElementById('relTotal');
+          const elAndamento = document.getElementById('relAndamento');
+          const elConcluidos = document.getElementById('relConcluidos');
+          
+          if (elTotal) elTotal.innerText = dados.totalLeads ?? 0;
+          if (elAndamento) elAndamento.innerText = dados.emAndamento ?? 0;
+          if (elConcluidos) elConcluidos.innerText = dados.concluidos ?? 0;
+      } catch (erro) {
+          console.error('Erro ao consultar relatório:', erro);
+      }
+  }
     const API_URL = '/api/leads';
 
     async function carregarLeads() {
@@ -151,6 +179,7 @@
 
     // Carrega a lista assim que abrir a página
     carregarLeads();
+    carregarRelatorio();
   </script>
 </body>
 </html>

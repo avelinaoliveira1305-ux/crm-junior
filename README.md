@@ -51,7 +51,7 @@ O projeto adota o padrão arquitetural em camadas:
 | `POST` | `/api/leads` | Cadastra um novo lead no banco |
 | `PUT` | `/api/leads/{id}` | Atualiza dados e status de um lead existente |
 | `DELETE` | `/api/leads/{id}` | Remove um lead do sistema |
-
+| `GET` | `/api/leads/relatorio` | Retorna métricas consolidadas do funil |
 ---
 
 ## 5. Instruções de Execução
@@ -90,3 +90,9 @@ Abra o navegador e acesse:
 ```text
 http://localhost:8080/
 ```
+#### Acesso ao Sistema e Autenticação
+O sistema conta com controlo de sessão e restrição de acesso:
+* **Página de Autenticação:** `http://localhost:8080/login.html`
+* **Utilizador Padrão:** `admin`
+* **Palavra-passe Padrão:** `admin123`
+* Após autenticar com sucesso, a sessão é registada e o utilizador é redirecionado para o painel principal (`index.html`). O painel dispõe também da opção de encerramento seguro de sessão (**Terminar Sessão**).

@@ -45,4 +45,27 @@ public class LeadService {
     public void deletar(Long id) {
         leadRepository.deleteById(id);
     }
+ // Relatório consolidado para acompanhamento do funil de vendas
+    public java.util.Map<String, Object> gerarRelatorio() {
+        java.util.List<br.com.crm.model.Lead> leads = leadRepository.findAll();
+        
+        long totalLeads = leads.size();
+        
+        java.util.Map<String, Long> leadsPorStatus = leads.stream()
+                .collect(java.util.stream.Collectors.groupingBy(
+                        l -> (l.getStatus() != null && !l.getStatus().isBlank()) ? l.getStatus().toUpperCase() : "NOVO",
+                        java.util.stream.Collectors.counting()
+                ));
+
+        long concluidos = leadsPorStatus.getOrDefault("CONCLUIDO", 0L) + leadsPorStatus.getOrDefault("GANHO", 0L);
+        long emAndamento = totalLeads - concluidos - leadsPorStatus.getOrDefault("PERDIDO", 0L);
+
+        java.util.Map<String, Object> relatorio = new java.util.HashMap<>();
+        relatorio.put("totalLeads", totalLeads);
+        relatorio.put("emAndamento", emAndamento);
+        relatorio.put("concluidos", concluidos);
+        relatorio.put("distribuicaoStatus", leadsPorStatus);
+        
+        return relatorio;
+    }
 }

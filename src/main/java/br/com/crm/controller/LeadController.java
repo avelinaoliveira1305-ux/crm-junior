@@ -61,4 +61,9 @@ public class LeadController {
             return ResponseEntity.notFound().build();
         }
     }
+ // Endpoint para o Relatório Executivo
+    @GetMapping("/relatorio")
+    public org.springframework.http.ResponseEntity<java.util.Map<String, Object>> obterRelatorio() {
+        return org.springframework.http.ResponseEntity.ok(leadService.gerarRelatorio());
+    }
 }
