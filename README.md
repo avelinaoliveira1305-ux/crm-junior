@@ -1,143 +1,210 @@
-# CRM Júnior - Sistema Corporativo de Gestão de Leads
+# CRM Júnior — Sistema Corporativo de Gestão de Leads
 
-Projeto desenvolvido como atividade avaliativa da disciplina de **Desenvolvimento de Sistemas Corporativos**, ministrada pelo **Prof. Francisco Chagas de Lima Júnior**, no curso de Sistemas para Internet (modalidade a distância) da **Universidade do Estado do Rio Grande do Norte (UERN)**.
+Projeto desenvolvido como atividade avaliativa da disciplina de **Desenvolvimento de Sistemas Corporativos**, ministrada pelo **Prof. Me. Francisco Chagas de Lima Júnior**, no curso de Sistemas para Internet (modalidade a distância) da **Universidade do Estado do Rio Grande do Norte (UERN)**.
 
 ---
 
 ## 1. Cenário da Empresa Fictícia e Objetivo
 
-A **CRM Júnior** é uma organização fictícia voltada para a prestação de serviços de consultoria empresarial e soluções digitais. O sistema implementado atua como um módulo corporativo simplificado de CRM (*Customer Relationship Management*), focado na captação, triagem e conversão de potenciais clientes (*leads* comerciais), bem como na emissão de relatórios executivos consolidados em tempo real.
+A **CRM Júnior** é uma empresa fictícia de consultoria empresarial e soluções digitais. O sistema desenvolvido é um CRM (*Customer Relationship Management*) simplificado para gerenciar potenciais clientes (*leads*), acompanhar negociações e consultar indicadores comerciais.
 
-### Arquitetura em Três Camadas (MVC)
-O projeto adota o padrão arquitetural corporativo em três camadas com separação estrita de responsabilidades:
-1. **Camada de Visão (Apresentação / View):** Desenvolvida em HTML5, CSS3 moderno (Tailwind CSS via CDN) e JavaScript nativo estruturado com a API `fetch`. Provê uma interface gráfica responsiva tanto para o painel operacional e dashboard (`index.html`) quanto para o controle de acesso e autenticação corporativa (`login.html`).
-2. **Camada de Negócios e Controle (Business Logic & Security / Controller & Service):** Implementada em Java com Spring Boot 3 e servidor Apache Tomcat embutido. Expõe endpoints RESTful padronizados para o gerenciamento negocial e incorpora camada de segurança com **Spring Security**, gerenciando autenticação baseada em sessão segura (`JSESSIONID`) e suporte a HTTP Basic Authentication.
-3. **Camada de Persistência e Dados (Persistence / Model & Repository):** Mapeamento Objeto-Relacional (ORM) estruturado com Spring Data JPA e Hibernate, integrado a um banco de dados relacional MariaDB.
+### 1.1. Arquitetura em Três Camadas
+
+O projeto separa rigorosamente as responsabilidades em três camadas arquiteturais:
+
+1. **Apresentação (View):** Páginas `login.html` e `index.html`, desenvolvidas com HTML5, CSS3, Tailwind CSS via CDN e Vanilla JavaScript. A comunicação assíncrona com o back-end é realizada via API `fetch()`.
+2. **Controle e Regras de Negócio (Controller e Service):** 
+   - `LeadController.java`: Endpoints REST e controle de requisições/respostas HTTP.
+   - `LeadService.java`: Validações e regras de negócio de cálculo de relatórios e status.
+   - `SecurityConfig.java`: Configuração dos filtros de segurança, autenticação baseada em sessão e suporte a HTTP Basic.
+3. **Persistência (Model e Repository):** 
+   - `Lead.java`: Entidade mapeada via Jakarta Persistence (JPA) / Hibernate.
+   - `LeadRepository.java`: Interface Spring Data JPA para abstração de operações no banco de dados MariaDB.
 
 ---
 
-## 2. Transações e Casos de Uso
+## 2. Funcionalidades e Casos de Uso
 
-### Caso de Uso 01: Gestão do Funil de Leads
-- **Ator Principal:** Consultor Comercial / Gestor Autenticado.
-- **Fluxo Principal:**
-  1. O usuário devidamente autenticado acessa o painel web (`/index.html`) e visualiza o formulário de entrada e a listagem atualizada de leads cadastrados.
-  2. O usuário preenche os dados do contato comercial (Nome, E-mail, Telefone, Empresa e Status inicial) e clica em **Cadastrar Lead**.
-  3. A camada de visão despacha uma requisição assíncrona `POST` para o endpoint `/api/leads`.
-  4. A camada de controle recebe o payload, delega a validação de integridade à camada de serviço e persiste o registro no MariaDB via repositório JPA.
-  5. A tabela em tela é atualizada dinamicamente exibindo o novo registro.
-  6. É possível atualizar o estágio negocial do lead via requisições `PUT` (`NOVO`, `EM_CONTATO`, `PROPOSTA`, `CONVERTIDO`) ou excluir registros via `DELETE`.
+### 2.1. Caso de Uso 01 — Gestão de Leads
+**Ator principal:** Administrador autenticado.
+1. O administrador acessa o painel do CRM Júnior.
+2. Preenche os dados do lead: nome, e-mail, telefone, empresa e status.
+3. Ao cadastrar, o front-end envia uma requisição `POST /api/leads`.
+4. O back-end valida, processa e persiste o registro no banco MariaDB.
+5. A listagem reflete imediatamente o lead cadastrado.
+6. O administrador pode editar os dados, alterar o status (`NOVO`, `EM_CONTATO`, `PROPOSTA` ou `CONVERTIDO`) e excluir registros.
 
-### Caso de Uso 02: Relatório Executivo Consolidado
-- **Ator Principal:** Gestor / Consultor Comercial Autenticado.
-- **Fluxo Principal:**
-  1. Durante o carregamento do painel (`index.html`), o script cliente efetua uma chamada assíncrona `GET` para o endpoint `/api/leads/relatorio`.
-  2. A camada de serviço processa os dados armazenados no banco relacional e calcula as métricas do funil, retornando uma resposta estruturada em JSON (Total de Leads, Em Andamento, Propostas e Convertidos).
-  3. O frontend consome o JSON e preenche em tempo real os cards de indicadores executivos no topo da página.
+### 2.2. Caso de Uso 02 — Relatório e Indicadores Comerciais
+**Ator principal:** Administrador autenticado.
+1. O painel solicita os indicadores ao endpoint `GET /api/leads/relatorio`.
+2. O serviço consulta a base de dados e calcula as métricas dinâmicas.
+3. A API retorna um JSON estruturado com `totalLeads`, `emAndamento`, `concluidos` e `distribuicaoStatus`.
+4. O painel apresenta os cartões de total de oportunidades, leads em andamento e negócios convertidos/concluídos.
 
-### Caso de Uso 03: Autenticação Corporativa e Encerramento de Sessão
-- **Ator Principal:** Qualquer usuário do sistema.
-- **Fluxo Principal:**
-  1. Tentativas de acesso não autenticado a rotas protegidas (`/index.html`, `/api/**`) são interceptadas pelo filtro de segurança e redirecionadas para a tela de autenticação (`/login.html`).
-  2. O usuário submete suas credenciais corporativas via formulário seguro `POST /login`.
-  3. O Spring Security valida as credenciais criptografadas via `BCryptPasswordEncoder`, cria a sessão de autenticação no servidor e redireciona o usuário para o painel principal (`/index.html`).
-  4. Ao acionar o botão **Terminar Sessão**, a rota `/logout` é requisitada, invalidando a sessão corporativa no servidor e retornando o navegador para `/login.html?logout=true`.
+### 2.3. Caso de Uso 03 — Autenticação e Encerramento de Sessão
+**Ator principal:** Administrador.
+1. O usuário acessa `/login.html` e submete as credenciais via `POST /login`.
+2. O Spring Security intercepta e autentica as credenciais com `BCryptPasswordEncoder`.
+3. Com o login válido, ocorre o redirecionamento automático para `/index.html`.
+4. As rotas `/api/**` e o painel exigem a autoridade `ROLE_ADMIN`.
+5. Tentativas inválidas redirecionam para `/login.html?error=true`.
+6. O acionamento do botão **Terminar Sessão** invalida a sessão no servidor e redireciona para `/login.html?logout=true`.
 
 ---
 
 ## 3. Tecnologias Utilizadas
 
-- **Linguagem:** Java 21 LTS
-- **Framework:** Spring Boot 3.x
-- **Segurança da Aplicação:** Spring Security (autenticação baseada em sessão corporativa, proteção de endpoints e criptografia via `BCryptPasswordEncoder`)
-- **Persistência de Dados:** Spring Data JPA / Hibernate
-- **Servidor de Aplicação:** Apache Tomcat (embutido)
-- **Gerenciador de Dependências:** Apache Maven
-- **Banco de Dados Relacional:** MariaDB / MySQL (executado via XAMPP na porta `3307`)
-- **Front-end:** HTML5, Tailwind CSS, Vanilla JavaScript (API `fetch`)
-- **Ambiente de Desenvolvimento (IDE):** Eclipse IDE for Enterprise Java and Web Developers
+| Tecnologia | Finalidade |
+| :--- | :--- |
+| **Java 21 (LTS)** | Linguagem de programação principal do back-end |
+| **Spring Boot 4.1.2** | Framework para configuração, injeção de dependências e microsserviço |
+| **Spring Security** | Camada de controle de acesso, filtros de autenticação e proteção |
+| **Spring Data JPA / Hibernate** | Mapeamento Objeto-Relacional (ORM) e persistência de dados |
+| **MariaDB** | Sistema Gerenciador de Banco de Dados Relacional (SGBD) |
+| **Apache Maven** | Automação e gerenciamento de dependências do projeto |
+| **Apache Tomcat Embutido** | Servidor web HTTP interno para execução da aplicação |
+| **HTML5 / CSS3 / Tailwind CSS** | Estruturação e estilização da interface gráfica moderna |
+| **Vanilla JavaScript** | Lógica assíncrona cliente (`fetch`) e manipulação do DOM |
+| **Eclipse IDE** | Ambiente Integrado de Desenvolvimento |
+| **Git / GitHub** | Controle de versão distribuído e hospedagem do código-fonte |
 
 ---
 
-## 4. Endpoints da API REST e Política de Segurança
+## 4. Documentação da API REST
 
-O controle de autorização e autenticação é gerenciado de maneira centralizada pela classe `SecurityConfig.java`. O acesso a regras de negócio e dados corporativos é condicionado à prévia autenticação.
-
-| Método | Endpoint | Descrição da Operação | Regra de Autorização |
+| Método | Endpoint | Descrição | Nível de Acesso |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/login.html` | Interface visual de acesso corporativo | **Público** (`permitAll`) |
-| `POST` | `/login` | Processamento das credenciais do formulário | **Público** (`permitAll`) |
-| `GET` | `/index.html` | Dashboard principal e gestão de leads | **Autenticado** (Sessão Web) |
-| `GET` | `/api/leads` | Listagem completa de contatos comerciais | **Autenticado** (`ROLE_ADMIN`) |
-| `GET` | `/api/leads/{id}` | Consulta detalhada de lead por ID | **Autenticado** (`ROLE_ADMIN`) |
-| `POST` | `/api/leads` | Inclusão de novo lead no funil | **Autenticado** (`ROLE_ADMIN`) |
-| `PUT` | `/api/leads/{id}` | Atualização cadastral e alteração de estágio | **Autenticado** (`ROLE_ADMIN`) |
-| `DELETE`| `/api/leads/{id}` | Exclusão definitiva de registro de lead | **Autenticado** (`ROLE_ADMIN`) |
-| `GET` | `/api/leads/relatorio`| Totalizadores e consolidação das etapas do funil | **Autenticado** (`ROLE_ADMIN`) |
-| `GET` | `/logout` | Encerramento seguro de sessão e desautenticação | **Público** (`permitAll`) |
+| `GET` | `/api/leads` | Listar todos os leads cadastrados | Autenticado (`ADMIN`) |
+| `GET` | `/api/leads/{id}` | Consultar lead específico por identificador | Autenticado (`ADMIN`) |
+| `POST` | `/api/leads` | Cadastrar novo lead | Autenticado (`ADMIN`) |
+| `PUT` | `/api/leads/{id}` | Atualizar dados cadastrais de um lead | Autenticado (`ADMIN`) |
+| `DELETE` | `/api/leads/{id}` | Excluir registro de lead da base de dados | Autenticado (`ADMIN`) |
+| `GET` | `/api/leads/relatorio` | Obter consolidado de indicadores comerciais | Autenticado (`ADMIN`) |
 
-> **Consumo Direto / Testes de API:** Além do suporte a sessões web em navegadores, os endpoints `/api/**` contam com autenticação **HTTP Basic** habilitada, permitindo a validação de requisições através de clientes HTTP (cURL, Postman ou Insomnia) enviando cabeçalhos de autorização padrão.
+### 4.1. Parâmetros de Segurança
+- **Formulário Web:** Sessão baseada em cookies pós-autenticação.
+- **Suporte a Clientes REST / Terminal:** Autenticação HTTP Basic (`Authorization: Basic ...`).
+- **Endpoints Públicos:** `/login.html`, `/css/**`, `/js/**`.
+- **Endpoints Protegidos:** `/index.html` e `/api/**`.
+- *Nota acadêmica:* Usuário definido em memória com hash BCrypt e proteção CSRF desabilitada para simplificação de testes locais de API via cURL.
 
 ---
 
-## 5. Instruções de Execução
+## 5. Como Executar o Projeto
 
-### Pré-requisitos
-- **Java JDK 21** instalado e configurado na variável de ambiente `JAVA_HOME`.
-- **XAMPP** com o módulo MariaDB/MySQL ativo e configurado na porta `3307`.
-- Base de dados criada com o nome `crm_db`.
+### 5.1. Pré-requisitos
+- JDK 21 instalado e configurado no PATH (`JAVA_HOME`).
+- Eclipse IDE (ou terminal com Maven instalado).
+- Instância do MariaDB ativa (via XAMPP na porta padrão ou porta `3307`).
 
-### Configuração do Banco de Dados
+### 5.2. Configuração da Base de Dados
+No cliente SQL (phpMyAdmin, DBeaver ou MySQL Workbench), crie o esquema:
+```sql
+CREATE DATABASE IF NOT EXISTS crm_db;
+O arquivo src/main/resources/application.properties está configurado para:
+spring.application.name=crm-junior
 
-1. Inicie os módulos **Apache** e **MySQL** no XAMPP Control Panel.
-2. Acesse a interface web do phpMyAdmin (`http://localhost/phpmyadmin/`) e execute a criação da base de dados:
-   ```sql
-   CREATE DATABASE crm_db;
-O projeto já está configurado no arquivo src/main/resources/application.properties para conectar-se à porta 3307:
-
-```properties
 spring.datasource.url=jdbc:mariadb://localhost:3307/crm_db
 spring.datasource.username=root
 spring.datasource.password=
+spring.datasource.driver-class-name=org.mariadb.jdbc.Driver
+
 spring.jpa.hibernate.ddl-auto=update
-```
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
 
-### Execução da Aplicação
+###5.3. Execução pelo Eclipse IDE
+Abra o Eclipse e vá em File > Import... > Maven > Existing Maven Projects.
 
-#### Via Eclipse IDE
-1. Importe o projeto no Eclipse por meio do menu **File** > **Import...** > **Maven** > **Existing Maven Projects**.
-2. No Project Explorer, localize o arquivo de inicialização: `src/main/java/br/com/crm/CrmJuniorApplication.java`.
-3. Clique com o botão direito no arquivo > **Run As** > **Java Application** (ou **Spring Boot App**).
-4. Acompanhe a inicialização na aba Console até a exibição da mensagem de conclusão:
-   ```text
-   Started CrmJuniorApplication in X.XXX seconds (process running for ...)
-   
-#### Via Linha de Comando (Terminal)
-Na raiz do projeto (mesmo diretório do arquivo `pom.xml`), execute:
-bash```bmvn clean install
+Selecione a pasta raiz do projeto e conclua.
+
+Localize o arquivo src/main/java/br/com/crm/CrmJuniorApplication.java.
+
+Clique com o botão direito > Run As > Java Application (ou Spring Boot App).
+
+Aguarde a mensagem no Console: Started CrmJuniorApplication.
+
+###5.4. Execução via Linha de Comando (Terminal)
+Na raiz do projeto (onde reside o arquivo pom.xml), execute:
+mvn clean install
 mvn spring-boot:run
-##6. Acesso ao Sistema e Validação de Segurança
-###Credenciais Padrão do Sistema
-Utilizador / Username: admin
-Palavra-passe / Password: admin123
-Perfil de Acesso: ROLE_ADMIN
-### Validação dos Fluxos
+##6. Acesso ao Sistema e Credenciais
 
-1. **Acesso ao Painel:**
-   - Acesse `http://localhost:8080/login.html` no navegador.
-   - Preencha o formulário com `admin` e `admin123` e clique em **Entrar no Sistema**.
-   - O Spring Security validará a requisição `POST /login` e redirecionará para `http://localhost:8080/index.html`.
+URL de Login: http://localhost:8080/login.html
 
-2. **Encerramento de Sessão:**
-   - Clique em **Terminar Sessão** no topo do painel.
-   - O sistema invalidará a sessão e redirecionará para `http://localhost:8080/login.html?logout=true`.
+Painel Administrativo: http://localhost:8080/index.html (requer login ativo)
 
-3. **Teste de Proteção de Endpoints (Via cURL / Terminal):**
-   - Tentativa sem credenciais (retorna HTTP 401 Unauthorized):
-     ```bash
-     curl -i http://localhost:8080/api/leads
-     ```
-   - Requisição autenticada com HTTP Basic (retorna HTTP 200 OK com os dados em JSON):
-     ```bash
-     curl -u admin:admin123 http://localhost:8080/api/leads
-     ```
+### 6.1. Credenciais de Demonstração
+
+| Campo | Valor | Observação |
+| --- | --- | --- |
+| **Usuário** | `admin` | Conta administrativa padrão |
+| **Senha** | `admin123` | Criptografada via BCrypt no back-end |
+| **Perfil** | `ROLE_ADMIN` | Permissão total aos endpoints `/api/**` |
+
+##7. Testes e Validação da Aplicação
+
+###7.1. Validação Visual e Fluxos Web
+
+1. Acesso Protegido: Acesse http://localhost:8080/index.html em uma aba anônima. O sistema deve redirecionar automaticamente para /login.html.
+
+2. Autenticação com Sucesso: Informe admin / admin123. O sistema autenticará via POST /login e redirecionará para o painel.
+
+3. Credenciais Inválidas: Tente entrar com senha errada; a página exibirá aviso de erro em /login.html?error=true.
+
+4. Encerramento de Sessão: Clique em Terminar Sessão. A sessão é destruída no servidor e o navegador vai para /login.html?logout=true.
+
+###7.2. Teste dos Endpoints via Terminal (cURL)
+
+Requisição não autorizada (sem credenciais):
+
+curl -i http://localhost:8080/api/leads
+Resultado esperado: HTTP/1.1 401 Unauthorized.
+
+Requisição autenticada (via HTTP Basic):
+
+curl -i -u admin:admin123 http://localhost:8080/api/leads
+Resultado esperado: HTTP/1.1 200 OK com a lista de leads em formato JSON.
+
+##8. Estrutura de Diretórios do Projeto
+
+crm-junior/
+├── src/
+│   ├── main/
+│   │   ├── java/br/com/crm/
+│   │   │   ├── CrmJuniorApplication.java
+│   │   │   ├── SecurityConfig.java
+│   │   │   ├── controller/
+│   │   │   │   └── LeadController.java
+│   │   │   ├── model/
+│   │   │   │   └── Lead.java
+│   │   │   ├── repository/
+│   │   │   │   └── LeadRepository.java
+│   │   │   └── service/
+│   │   │       └── LeadService.java
+│   │   └── resources/
+│   │       ├── application.properties
+│   │       └── static/
+│   │           ├── index.html
+│   │           └── login.html
+│   └── test/
+├── pom.xml
+├── mvnw
+├── mvnw.cmd
+└── README.md
+
+##9. Considerações Finais
+
+O projeto CRM Júnior consolida com rigor técnico a aplicação dos pilares de Desenvolvimento de Sistemas Corporativos:
+
+Arquitetura corporativa em três camadas com desacoplamento de responsabilidades.
+
+Segurança perimetral com controle de acesso, criptografia de senhas e proteção de endpoints REST.
+
+Persistência mapeada com ORM/JPA e integridade relacional no MariaDB.
+
+Interface limpa, responsiva e integrada por chamadas assíncronas assentes no protocolo HTTP.
+
+
+
+

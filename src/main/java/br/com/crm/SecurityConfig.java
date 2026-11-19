@@ -23,8 +23,8 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/login.html", "/favicon.ico").permitAll()
-                .requestMatchers("/api/**").authenticated()
-                .requestMatchers("/index.html").authenticated()
+                .requestMatchers("/api/**").hasRole("ADMIN")
+                .requestMatchers("/index.html").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form
