@@ -7,18 +7,39 @@
 </head>
 <body class="bg-gray-50 min-h-screen p-6">
   <div class="max-w-5xl mx-auto space-y-8">
-    <header class="flex items-center justify-between pb-4 border-b border-gray-200">
-      <div>
-        <h1 class="text-2xl font-bold text-gray-800">CRM Júnior</h1>
-        <p class="text-sm text-gray-500">Pipeline e Gestão de Leads</p>
-      </div>
-      <span class="px-3 py-1 text-xs font-semibold text-emerald-700 bg-emerald-100 rounded-full">Online</span>
-    </header>
+ <header class="flex items-center justify-between pb-4 border-b border-gray-200">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800">CRM Júnior</h1>
+                <p class="text-sm text-gray-500">Pipeline e Gestão de Leads</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <span class="px-3 py-1 text-xs font-semibold text-emerald-700 bg-emerald-100 rounded-full">Online</span>
+                <button onclick="fazerLogout()" class="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-semibold rounded-md transition duration-150">
+                    Terminar Sessão
+                </button>
+            </div>
+        </header>
+    <!-- Relatório Executivo e Indicadores -->
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Total de Oportunidades</span>
+                <p id="relTotal" class="text-3xl font-bold text-gray-800 mt-2">0</p>
+            </div>
+            <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                <span class="text-xs font-semibold text-indigo-500 uppercase tracking-wider">Em Negociação / Andamento</span>
+                <p id="relAndamento" class="text-3xl font-bold text-indigo-600 mt-2">0</p>
+            </div>
+            <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                <span class="text-xs font-semibold text-emerald-500 uppercase tracking-wider">Convertidos / Concluídos</span>
+                <p id="relConcluidos" class="text-3xl font-bold text-emerald-600 mt-2">0</p>
+            </div>
+        </section>
 
     <!-- Formulário de Cadastro -->
     <section class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
       <h2 class="text-lg font-semibold text-gray-700 mb-4">Novo Lead</h2>
       <form id="leadForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <input type="hidden" id="leadId" value="">
         <div>
           <label class="block text-xs font-medium text-gray-600 mb-1">Nome *</label>
           <input type="text" id="nome" required placeholder="Ex: Roberto Dias" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
@@ -46,6 +67,7 @@
         </div>
         <div class="lg:col-span-5 flex justify-end">
           <button type="submit" class="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition">Cadastrar Lead</button>
+          <button type="button" onclick="limparFormulario()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-sm font-medium transition ml-2">Limpar</button>
         </div>
       </form>
     </section>
@@ -78,15 +100,11 @@
   </div>
 
   <script>
-//Controlo de Acesso e Sessão
-  if (!localStorage.getItem('crm_auth_token')) {
-      window.location.href = '/login.html';
-  }
+
 
   function fazerLogout() {
-      localStorage.removeItem('crm_auth_token');
-      window.location.href = '/login.html';
-  }
+	    window.location.href = '/logout';
+	}
 
   // Obter dados agregados para o Relatório Executivo
   async function carregarRelatorio() {
@@ -131,7 +149,7 @@
             <td class="px-4 py-3">${lead.empresa || '-'}</td>
             <td class="px-4 py-3"><span class="px-2 py-1 text-xs rounded-full bg-blue-50 text-blue-700 font-medium">${lead.status || 'NOVO'}</span></td>
             <td class="px-4 py-3 text-center">
-              <button onclick="deletarLead(${lead.id})" class="text-red-500 hover:text-red-700 text-xs font-medium">Excluir</button>
+            <button onclick="prepararEdicao(${lead.id}, '${lead.nome}', '${lead.email}', '${lead.empresa}', '${lead.telefone}', '${lead.status}')" class="text-indigo-600 hover:text-indigo-800 text-xs font-semibold mr-3">Editar</button><button onclick="deletarLead(${lead.id})" class="text-red-500 hover:text-red-700 text-xs font-medium">Excluir</button>
             </td>
           `;
           tbody.appendChild(tr);
@@ -140,31 +158,36 @@
         console.error('Erro ao buscar leads:', err);
       }
     }
-
     document.getElementById('leadForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const novoLead = {
-        nome: document.getElementById('nome').value,
-        email: document.getElementById('email').value,
-        telefone: document.getElementById('telefone').value,
-        empresa: document.getElementById('empresa').value,
-        status: document.getElementById('status').value
-      };
+        e.preventDefault();
+        
+        const id = document.getElementById('leadId').value;
+        const novoLead = {
+            nome: document.getElementById('nome').value,
+            email: document.getElementById('email').value,
+            telefone: document.getElementById('telefone').value,
+            empresa: document.getElementById('empresa').value,
+            status: document.getElementById('status').value
+        };
 
-      try {
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(novoLead)
-        });
+        try {
+            const metodo = id ? 'PUT' : 'POST';
+            const endpoint = id ? `${API_URL}/${id}` : API_URL;
 
-        if (res.ok) {
-          document.getElementById('leadForm').reset();
-          carregarLeads();
+            const res = await fetch(endpoint, {
+                method: metodo,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(novoLead)
+            });
+
+            if (res.ok) {
+                limparFormulario();
+                carregarLeads();
+                carregarRelatorio();
+            }
+        } catch (err) {
+            console.error('Erro ao salvar lead:', err);
         }
-      } catch (err) {
-        console.error('Erro ao salvar lead:', err);
-      }
     });
 
     async function deletarLead(id) {
@@ -175,6 +198,20 @@
       } catch (err) {
         console.error('Erro ao deletar lead:', err);
       }
+    }
+    function prepararEdicao(id, nome, email, empresa, telefone, status) {
+        document.getElementById('leadId').value = id;
+        document.getElementById('nome').value = nome;
+        document.getElementById('email').value = email;
+        document.getElementById('empresa').value = empresa;
+        document.getElementById('telefone').value = telefone;
+        document.getElementById('status').value = status;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function limparFormulario() {
+        document.getElementById('leadId').value = '';
+        document.getElementById('leadForm').reset();
     }
 
     // Carrega a lista assim que abrir a página
